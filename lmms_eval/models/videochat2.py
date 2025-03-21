@@ -24,6 +24,9 @@ from transformers import (
 from lmms_eval.api.instance import Instance
 from lmms_eval.api.model import lmms
 from lmms_eval.api.registry import register_model
+from huggingface_hub import login
+token = os.environ["HF_TOKEN"]
+login(token=token)
 
 eval_logger = logging.getLogger("eval_logger")
 

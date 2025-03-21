@@ -95,6 +95,7 @@ class GPT4V(lmms):
             self._world_size = self.accelerator.num_processes
 
         self.device = self.accelerator.device
+        self.max_size = (512, 512)
 
     # Function to encode the image
     def encode_image(self, image: Image):
@@ -120,6 +121,7 @@ class GPT4V(lmms):
         base64_frames = []
         for frame in frames:
             img = Image.fromarray(frame)
+            img = img.resize(self.max_size)
             output_buffer = BytesIO()
             img.save(output_buffer, format="PNG")
             byte_data = output_buffer.getvalue()
@@ -184,6 +186,8 @@ class GPT4V(lmms):
                 payload["messages"].append(deepcopy(response_json))
                 payload["messages"][-1]["content"].append({"type": "text", "text": contexts[-1]})
 
+            #### dirty but need to assign more token for the gpt4v
+            gen_kwargs["max_new_tokens"] = 256
             if "max_new_tokens" not in gen_kwargs:
                 gen_kwargs["max_new_tokens"] = 1024
             if gen_kwargs["max_new_tokens"] > 4096:
@@ -218,6 +222,8 @@ class GPT4V(lmms):
                     else:  # If this was the last attempt, log and return empty string
                         eval_logger.error(f"All 5 attempts failed. Last error message: {str(e)}.\nResponse: {response.json()}")
                         response_text = ""
+            # import pdb; pdb.set_trace()
+            # print(response_text)
             res.append(response_text)
             pbar.update(1)
 

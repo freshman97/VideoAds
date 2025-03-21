@@ -212,6 +212,7 @@ class InternVideo2(lmms):
 
         self._tokenizer = AutoTokenizer.from_pretrained(self.path, trust_remote_code=True, use_fast=False)
         self._model = AutoModel.from_pretrained(self.path, torch_dtype=torch.bfloat16, trust_remote_code=True).eval().cuda()
+        # self._model.generation_config.pad_token_id = self._tokenizer.pad_token_id
         batch_size = int(batch_size)
         self.num_segments = int(num_segments)
         self.hd_num = int(hd_num)

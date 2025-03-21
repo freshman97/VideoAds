@@ -12,18 +12,28 @@ from tqdm import tqdm
 from lmms_eval.api.instance import Instance
 from lmms_eval.api.model import lmms
 from lmms_eval.api.registry import register_model
+GOOGLE_API_KEY = ""
 
-try:
-    import google.generativeai as genai
-    from google.generativeai.types import HarmBlockThreshold, HarmCategory
+import google.generativeai as genai
+from google.generativeai.types import HarmBlockThreshold, HarmCategory
+# from google import genai
+# from google.genai.types import HarmBlockThreshold, HarmCategory
 
-    NUM_SECONDS_TO_SLEEP = 30
-    GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-    genai.configure(api_key=GOOGLE_API_KEY)
+NUM_SECONDS_TO_SLEEP = 30
+# GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+genai.configure(api_key=GOOGLE_API_KEY)
 
-except Exception as e:
-    eval_logger.error(f"Error importing generativeai: {str(e)}")
-    genai = None
+# try:
+#     import google.generativeai as genai
+#     from google.generativeai.types import HarmBlockThreshold, HarmCategory
+
+#     NUM_SECONDS_TO_SLEEP = 30
+#     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+#     genai.configure(api_key=GOOGLE_API_KEY)
+
+# except Exception as e:
+#     eval_logger.error(f"Error importing generativeai: {str(e)}")
+#     genai = None
 
 
 @register_model("gemini_api")
@@ -34,7 +44,7 @@ class GeminiAPI(lmms):
         modality: str = "image",
         timeout: int = 120,
         continual_mode: bool = False,
-        response_persistent_folder: str = None,  # We will cache the Gemini API response in this path and use it for future requests
+        response_persistent_folder: str = "/home/zze3980/projects/video/lmms-eval/temp_gemini",  # We will cache the Gemini API response in this path and use it for future requests
         **kwargs,
     ) -> None:
         super().__init__()
@@ -179,7 +189,8 @@ class GeminiAPI(lmms):
                         content = ""
             res.append(content)
             pbar.update(1)
-
+            # import pdb; pdb.set_trace()
+            # print(content)
             self.free_video()
 
             if self.continual_mode is True:  # Cache the response

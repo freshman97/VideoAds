@@ -23,7 +23,7 @@ from loguru import logger as eval_logger
 DEFAULT_IMAGE_TOKEN = "<|image|>"
 
 
-@register_model("llama_vision")
+@register_model("LlamaVision")
 class LlamaVision(lmms):
     """
     Llava Model for Hugging Face Transformers: https://huggingface.co/docs/transformers/v4.39.3/en/model_doc/llava

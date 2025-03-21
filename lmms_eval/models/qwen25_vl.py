@@ -8,7 +8,7 @@ from accelerate import Accelerator, DistributedType, InitProcessGroupKwargs
 from loguru import logger as eval_logger
 from PIL import Image
 from tqdm import tqdm
-from transformers import AutoProcessor, AutoTokenizer, Qwen2VLForConditionalGeneration
+from transformers import AutoProcessor, AutoTokenizer, Qwen2_5_VLForConditionalGeneration
 
 from lmms_eval import utils
 from lmms_eval.api.instance import Instance
@@ -21,8 +21,8 @@ except ImportError:
     eval_logger.warning("Failed to import qwen_vl_utils; Please install it via `pip install qwen-vl-utils`")
 
 
-@register_model("qwen2_vl")
-class Qwen2_VL(lmms):
+@register_model("qwen25_vl")
+class Qwen25_VL(lmms):
     """
     Qwen2_VL Model
     "https://github.com/QwenLM/Qwen2-VL"
@@ -30,7 +30,7 @@ class Qwen2_VL(lmms):
 
     def __init__(
         self,
-        pretrained: str = "Qwen/Qwen2-VL-7B-Instruct",
+        pretrained: str = "Qwen/Qwen2.5-VL-7B-Instruct",
         device: Optional[str] = "cuda",
         device_map: Optional[str] = "auto",
         batch_size: Optional[Union[int, str]] = 1,
@@ -44,10 +44,11 @@ class Qwen2_VL(lmms):
 
         accelerator_kwargs = InitProcessGroupKwargs()
         accelerator = Accelerator(kwargs_handlers=[accelerator_kwargs])
+        # accelerator.num_processes = 1
         if accelerator.num_processes > 1:
             self._device = torch.device(f"cuda:{accelerator.local_process_index}")
             self.device_map = f"cuda:{accelerator.local_process_index}"
-        elif device_map == "auto":
+        elif device_map == "auto" or device_map == "sequential" or device_map == "balanced_low_0":
             print("Using auto device map")
             self._device = torch.device(device)
             self.device_map = device_map
@@ -56,14 +57,15 @@ class Qwen2_VL(lmms):
             self.device_map = f"cuda:{accelerator.local_process_index}"
 
         if use_flash_attention_2:
-            self._model = Qwen2VLForConditionalGeneration.from_pretrained(
+            self._model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
                 pretrained,
-                torch_dtype="auto",
+                torch_dtype=torch.bfloat16,
                 device_map=self.device_map,
                 attn_implementation="flash_attention_2",
             ).eval()
         else:
-            self._model = Qwen2VLForConditionalGeneration.from_pretrained(pretrained, torch_dtype="auto", device_map=self.device_map).eval()
+            self._model = Qwen2_5_VLForConditionalGeneration.from_pretrained(pretrained, torch_dtype=torch.bfloat16, device_map=self.device_map).eval()
+        
         self.processor = AutoProcessor.from_pretrained(pretrained)
         self._tokenizer = AutoTokenizer.from_pretrained(pretrained)
 
@@ -228,14 +230,18 @@ class Qwen2_VL(lmms):
 
             texts = [self.processor.apply_chat_template(msg, tokenize=False, add_generation_prompt=True) for msg in messages]
             image_inputs, video_inputs = process_vision_info(messages)
-            inputs = self.processor(text=texts, images=image_inputs, videos=video_inputs, padding=True, return_tensors="pt")
+            # print(video_inputs[0].shape)
+            inputs = self.processor(text=texts,
+                                    images=image_inputs,
+                                    videos=video_inputs,
+                                    padding=True, return_tensors="pt")
 
             """
             if self.device_map == "auto":
                 inputs = inputs.to("cuda:0")
             else:
                 inputs = inputs.to(self.device)"""
-            inputs = inputs.to(self._model.device)
+            inputs = inputs.to("cuda")
 
             if "max_new_tokens" not in gen_kwargs:
                 gen_kwargs["max_new_tokens"] = 128
@@ -262,11 +268,13 @@ class Qwen2_VL(lmms):
 
             generated_ids_trimmed = [out_ids[len(in_ids) :] for in_ids, out_ids in zip(inputs.input_ids, cont)]
             answers = self.processor.batch_decode(generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False)
-            for i, ans in enumerate(answers):
+            # import pdb; pdb.set_trace()
+            # print(answers)
+            """for i, ans in enumerate(answers):
                 for term in until:
                     if len(term) > 0:
                         ans = ans.split(term)[0]
-                answers[i] = ans
+                answers[i] = ans"""
 
             for ans, context in zip(answers, contexts):
                 res.append(ans)

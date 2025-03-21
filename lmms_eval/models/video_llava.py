@@ -23,7 +23,7 @@ from transformers import VideoLlavaForConditionalGeneration, VideoLlavaProcessor
 from lmms_eval.models.model_utils.load_video import read_video_pyav
 
 
-@register_model("video_llava")
+@register_model("VideoLLaVA")
 class VideoLLaVA(lmms):
     def __init__(
         self,

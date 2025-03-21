@@ -32,7 +32,7 @@ except ImportError:
 from lmms_eval.models.model_utils.load_video import read_video_pyav
 
 
-@register_model("video_chatgpt")
+@register_model("VideoChatGPT")
 class VideoChatGPT(lmms):
     def __init__(
         self,

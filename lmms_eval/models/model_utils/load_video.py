@@ -2,6 +2,7 @@ import av
 import numpy as np
 from av.codec.context import CodecContext
 
+import pdb
 
 # This one is faster
 def record_video_length_stream(container, indices):
@@ -33,29 +34,29 @@ def read_video_pyav(video_path, num_frm=8):
 
     if "webm" not in video_path and "mkv" not in video_path:
         # For mp4, we try loading with stream first
-        try:
-            container = av.open(video_path)
-            total_frames = container.streams.video[0].frames
-            sampled_frm = min(total_frames, num_frm)
-            indices = np.linspace(0, total_frames - 1, sampled_frm, dtype=int)
+        # try:
+        #     container = av.open(video_path)
+        #     total_frames = container.streams.video[0].frames
+        #     sampled_frm = min(total_frames, num_frm)
+        #     indices = np.linspace(0, total_frames - 1, sampled_frm, dtype=int)
 
-            # Append the last frame index if not already included
-            if total_frames - 1 not in indices:
-                indices = np.append(indices, total_frames - 1)
+        #     # Append the last frame index if not already included
+        #     if total_frames - 1 not in indices:
+        #         indices = np.append(indices, total_frames - 1)
 
-            frames = record_video_length_stream(container, indices)
-        except:
-            container = av.open(video_path)
-            frames = record_video_length_packet(container)
-            total_frames = len(frames)
-            sampled_frm = min(total_frames, num_frm)
-            indices = np.linspace(0, total_frames - 1, sampled_frm, dtype=int)
+        #     frames = record_video_length_stream(container, indices)
+        # except:
+        container = av.open(video_path)
+        frames = record_video_length_packet(container)
+        total_frames = len(frames)
+        sampled_frm = min(total_frames, num_frm)
+        indices = np.linspace(0, total_frames - 1, sampled_frm, dtype=int)
 
-            # Append the last frame index if not already included
-            if total_frames - 1 not in indices:
-                indices = np.append(indices, total_frames - 1)
+        # Append the last frame index if not already included
+        if total_frames - 1 not in indices:
+            indices = np.append(indices, total_frames - 1)
 
-            frames = [frames[i] for i in indices]
+        frames = [frames[i] for i in indices]
     else:
         container = av.open(video_path)
         frames = record_video_length_packet(container)
@@ -68,4 +69,10 @@ def read_video_pyav(video_path, num_frm=8):
             indices = np.append(indices, total_frames - 1)
 
         frames = [frames[i] for i in indices]
+    
+    try:
+        np.stack([x.to_ndarray(format="rgb24") for x in frames])
+    except:
+        pdb.set_trace()
+
     return np.stack([x.to_ndarray(format="rgb24") for x in frames])

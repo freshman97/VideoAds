@@ -2,7 +2,6 @@ import math
 import os
 from datetime import timedelta
 from typing import List, Optional, Tuple, Union
-
 import numpy as np
 import torch
 from accelerate import Accelerator, DistributedType, InitProcessGroupKwargs
@@ -176,7 +175,6 @@ class LlavaVid(lmms):
             self._tokenizer, self._model, self._image_processor, self._max_length = load_pretrained_model(pretrained, None, self.model_name, device_map=self.device_map, torch_dtype=self.torch_dtype, attn_implementation=attn_implementation)
 
         self._config = self._model.config
-
         # import pdb;pdb.set_trace()
 
         if self._tokenizer.pad_token_id is None:
@@ -518,6 +516,9 @@ class LlavaVid(lmms):
                 # output_ids = self.model.generate(inputs=input_ids, images=videos, attention_mask=attention_masks, modalities="video", do_sample=True, temperature=0.2, max_new_tokens=50,use_cache=True)
 
             outputs = self.tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0].strip()
+            # import pdb; pdb.set_trace()
+            # print(outputs)
+
             eval_logger.debug(f"Question: {cur_prompt}")
             eval_logger.debug(f"Answer: {outputs}")
             # import pdb;pdb.set_trace()
